@@ -120,7 +120,7 @@ public class ZhiHuSpider implements PageProcessor {
                 new BasicNameValuePair("q","java")};
         Spider.create(new ZhiHuSpider())
                 .addRequest(request)
-                .setDownloader(new SeleniumDownloader("src/main/resource/chromedriver.exe"))
+                .setDownloader(new SeleniumDownloader("src\\main\\resource\\chromedriver.exe"))
                 .addPipeline(new ConsolePipeline())
                 // 开启5个线程抓取
                 .thread(1)
