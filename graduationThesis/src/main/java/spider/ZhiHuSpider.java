@@ -1,29 +1,20 @@
 package spider;
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.interactions.Actions;
+import org.apache.commons.collections.CollectionUtils;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
-import us.codecraft.webmagic.downloader.selenium.SeleniumDownloader;
 import us.codecraft.webmagic.pipeline.ConsolePipeline;
 import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.selector.JsonPathSelector;
 import us.codecraft.webmagic.utils.HttpConstant;
-
 import java.util.List;
-
 /**
  * Created by Administrator on 2017/3/6.
  */
 public class ZhiHuSpider implements PageProcessor {
 
-    public static final String ZhiHuListUrl = "/question/[0-9]+";//问题url列表
+    public static final String ZhiHuListUrl = "https://www.zhihu.com/r/search\\?\\w+=\\w+&\\w+=\\w+&offset=0";//问题url列表
     public static final String ZhiHuQuesUrl = "https://www.zhihu.com/question/[0-9]+/answer/[0-9]+";//问题的最终url包含答案详情的url
     //模拟登陆知乎
     private Site site = new Site().setRetryTimes(3).setSleepTime(100)
@@ -64,67 +55,36 @@ public class ZhiHuSpider implements PageProcessor {
 
     //抓取数据
     public void process(Page page) {
+            List<String> ids = new JsonPathSelector("$..paging.next").selectList(page.getRawText());
+            System.out.println("ids:"+ids.toString());
+            if (CollectionUtils.isNotEmpty(ids)) {
+                for (String id : ids) {
 
-        System.out.println(page.getHtml().toString());
-        //列表页
-                 /* if (page.getHtml().xpath("//ul[@class=contents").links().regex(ZhiHuListUrl).match()) {
-                      page.addTargetRequests(page.getHtml().xpath("//div[@class=zu-main-content").links().regex(ZhiHuQuesUrl).all());
-                      page.addTargetRequests(page.getHtml().links().regex(ZhiHuQuesUrl).all());
-                      //文章页
-                  } else {
-                      page.putField("title", page.getHtml().xpath("//h1/text()"));
-                      page.putField("watch", page.getHtml().xpath("//div[@class=NumberBoard-name]/text()"));
-                      page.putField("watchNumber", page.getHtml().xpath("//div[@class=NumberBoard-value]/text()"));
-                  }*/
-       // WebDriver webDriver = new ChromeDriver();
+                    page.addTargetRequest(id);
+                }
+            }
+            List<String> list = new JsonPathSelector("$..htmls").selectList(page.getRawText());
+            System.out.println(list.size());
+            for (String str: list ) {
+                System.out.println("str:"+str);
+            }
 
-       // webDriver.get("https://www.zhihu.com/search?type=content&q=java");
-
-//        WebElement more = webDriver.findElement(By.className("zg-btn-white"));
-       /* for(int i=0;i<2;i++){
-            webDriver.findElement(By.className("zg-btn-white")).click();
-            System.out.println(webDriver.findElement(By.className("list")).getText());
-        }*/
-
-//        System.out.println("more" + more.getText());
-        //模拟点击
-
-//        System.out.println(more.isEnabled());
-        //webDriver.close();
-
-       /*  for(int i=0;i<40;){
-            String url = "https://www.zhihu.com/search?type=content&q=Java&offset="+i;
-            i+=10;
-          page.addTargetRequest(url);
-        }
-*/
-//        List<String> ids = new JsonPathSelector("$.data[*].htmls").selectList(page.getRawText());
-      /*  String content = page.getRawText();
-
-        System.out.println(content.toString());*/
-
-
-
-
-}
+    }
     public Site getSite() {
         return site;
     }
 //测试
     public static void main(String[] args) {
-       // System.getProperties().setProperty("webdriver.chrome.driver", "F:/Project/chromedriver.exe");
-        Request request = new Request("https://www.zhihu.com/search?type=content&q=java&offset=20");
-        request.setMethod(HttpConstant.Method.GET);
-        //只有post请求才支持参入参数
-        NameValuePair[] nameValuePair = {new BasicNameValuePair("type","content"),
-                new BasicNameValuePair("q","java")};
-        Spider.create(new ZhiHuSpider())
-                .addRequest(request)
-                .setDownloader(new SeleniumDownloader("src\\main\\resource\\chromedriver.exe"))
-                .addPipeline(new ConsolePipeline())
-                // 开启5个线程抓取
-                .thread(1)
-                // 启动爬虫
-                .run();
+            Request request = new Request("https://www.zhihu.com/r/search?type=content&q=java&offset=0");
+            request.setMethod(HttpConstant.Method.GET);
+            Spider.create(new ZhiHuSpider())
+                    .addRequest(request)
+                    .addPipeline(new ConsolePipeline())
+                    // 开启5个线程抓取
+                    .thread(1)
+                    // 启动爬虫
+                    .run();
+            System.out.println("over");
+
     }
 }
